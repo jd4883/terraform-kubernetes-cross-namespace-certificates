@@ -34,3 +34,5 @@ variable "replication-allowed" {
   type    = string
   default = "true"
 }
+
+variable "email" { type = string }
