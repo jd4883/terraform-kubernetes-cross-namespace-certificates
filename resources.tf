@@ -1,3 +1,76 @@
+resource "kubectl_manifest" "cluster-issuer" {
+  for_each = {
+    production = "https://acme-v02.api.letsencrypt.org/directory"
+    staging    = "https://acme-staging-v02.api.letsencrypt.org/directory"
+  }
+  yaml_body = yamlencode({
+    apiVersion = "cert-manager.io/v1"
+    kind       = "ClusterIssuer"
+    metadata = {
+      name = "letsencrypt-${each.key}"
+    }
+    spec = {
+      acme = {
+        email          = var.email
+        preferredChain = ""
+        privateKeySecretRef = {
+          key  = "private-key"
+          name = "letsencrypt-${each.key}"
+        }
+        server        = each.value
+        skipTLSVerify = true
+        solvers = [
+          {
+            dns01 = {
+              digitalocean = {
+                tokenSecretRef = {
+                  key  = "access-token"
+                  name = "digitalocean-api-key"
+                }
+              }
+              selector = { dnsZones = [var.domain] }
+            }
+          }
+        ]
+      }
+    }
+  })
+  ignore_fields = [
+    "metadata.managedFields",
+    "spec.status",
+  ]
+}
+
+resource "kubectl_manifest" "base-certificate" {
+  for_each = toset(["production", "staging"])
+  yaml_body = yamlencode({
+    apiVersion = "cert-manager.io/v1"
+    kind       = "Certificate"
+    metadata = {
+      name      = var.domain
+      namespace = var.starting_ns
+    }
+    spec = {
+      dnsNames = [var.domain, "*.${var.domain}"]
+      isCA     = false
+      issuerRef = {
+        group = "cert-manager.io"
+        kind  = "ClusterIssuer"
+        name  = "letsencrypt-${each.value}"
+      }
+      privateKey = {
+        algorithm = "ECDSA"
+        size      = 384
+      }
+      secretName = "${var.domain}-tls"
+    }
+  })
+  ignore_fields = [
+    "metadata.managedFields",
+    "spec.status",
+  ]
+}
+
 resource "kubernetes_secret" "certificate" {
   metadata {
     name      = "${var.domain}-tls"
