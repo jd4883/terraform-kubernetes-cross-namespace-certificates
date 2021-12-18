@@ -42,7 +42,7 @@ resource "kubectl_manifest" "cluster-issuer" {
 }
 
 resource "kubectl_manifest" "base-certificate" {
-  for_each = toset(["production", "staging"])
+  for_each = toset(["production"]) #, "staging"])
   yaml_body = yamlencode({
     apiVersion = "cert-manager.io/v1"
     kind       = "Certificate"
