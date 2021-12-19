@@ -1,7 +1,7 @@
 resource "kubectl_manifest" "cluster-issuer" {
   for_each = {
     production = "https://acme-v02.api.letsencrypt.org/directory"
-    staging    = "https://acme-staging-v02.api.letsencrypt.org/directory"
+    #staging    = "https://acme-staging-v02.api.letsencrypt.org/directory"
   }
   yaml_body = yamlencode({
     apiVersion = "cert-manager.io/v1"
