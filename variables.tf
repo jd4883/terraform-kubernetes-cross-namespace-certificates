@@ -1,7 +1,8 @@
 variable "domain" { type = string }
 variable "issuer" { type = string }
 variable "namespaces" { type = list(string) }
-
+variable "secretKey" { type = string }
+variable "secretName" { type = string }
 
 variable "starting_ns" {
   type    = string
