@@ -24,8 +24,8 @@ resource "kubectl_manifest" "cluster-issuer" {
             dns01 = {
               digitalocean = {
                 tokenSecretRef = {
-                  key  = "access-token"
-                  name = "digitalocean-api-key"
+                  key  = var.secretKey
+                  name = var.secretName
                 }
               }
               selector = { dnsZones = [var.domain] }
