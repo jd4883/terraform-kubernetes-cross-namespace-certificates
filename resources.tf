@@ -1,7 +1,7 @@
 resource "kubectl_manifest" "cluster-issuer" {
   for_each = {
     production = "https://acme-v02.api.letsencrypt.org/directory"
-    #staging    = "https://acme-staging-v02.api.letsencrypt.org/directory"
+    staging    = "https://acme-staging-v02.api.letsencrypt.org/directory"
   }
   yaml_body = yamlencode({
     apiVersion = "cert-manager.io/v1"
@@ -22,7 +22,7 @@ resource "kubectl_manifest" "cluster-issuer" {
         solvers = [
           {
             dns01 = {
-              digitalocean = {
+              (var.dns_provider) = {
                 tokenSecretRef = {
                   key  = var.secretKey
                   name = var.secretName
@@ -42,21 +42,36 @@ resource "kubectl_manifest" "cluster-issuer" {
 }
 
 resource "kubectl_manifest" "base-certificate" {
-  for_each = toset(["production"]) #, "staging"])
+  for_each = {
+    production = "https://acme-v02.api.letsencrypt.org/directory"
+    #staging    = "https://acme-staging-v02.api.letsencrypt.org/directory"
+  }
   yaml_body = yamlencode({
     apiVersion = "cert-manager.io/v1"
     kind       = "Certificate"
     metadata = {
-      name      = var.domain
+      name      = "${var.domain}-tls"
       namespace = var.starting_ns
     }
     spec = {
+      acme = {
+        config = [
+          {
+            dns01 = {
+              provider = var.dns_provider
+              ingressClass = var.ingress_class
+            }
+            domains = [var.domain, "*.${var.domain}"]
+          }
+        ]
+      }
+      commonName = "*.${var.domain}"
       dnsNames = [var.domain, "*.${var.domain}"]
       isCA     = false
       issuerRef = {
         group = "cert-manager.io"
         kind  = "ClusterIssuer"
-        name  = "letsencrypt-${each.value}"
+        name  = "letsencrypt-${each.key}"
       }
       privateKey = {
         algorithm = "ECDSA"
