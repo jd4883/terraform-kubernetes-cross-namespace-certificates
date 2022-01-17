@@ -37,3 +37,13 @@ variable "replication-allowed" {
 }
 
 variable "email" { type = string }
+
+variable "dns_provider" {
+  type = string
+  default = "digitalocean"
+}
+
+variable "ingress_class" {
+  type = string
+  default = "nginx"
+}
