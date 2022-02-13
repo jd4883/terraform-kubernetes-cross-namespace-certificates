@@ -112,7 +112,7 @@ resource "kubernetes_secret" "certificate" {
 }
 
 resource "kubernetes_secret" "certificate-replicas" {
-  for_each = toset(var.namespaces)
+  for_each = setsubtract(toset(var.namespaces), [var.starting_ns])
   metadata {
     name      = kubernetes_secret.certificate.metadata.0.name
     namespace = each.value
